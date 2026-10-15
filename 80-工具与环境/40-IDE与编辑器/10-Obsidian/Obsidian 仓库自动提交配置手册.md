@@ -60,6 +60,7 @@ tags:
   "autoCommitMessage": "vault backup: {{date}}",
   "commitDateFormat": "YYYY-MM-DD HH:mm:ss",
   "autoSaveInterval": 10,
+  "autoBackupAfterFileChange": false,
   "autoPushInterval": 0,
   "autoPullInterval": 0,
   "autoPullOnBoot": true,
@@ -76,6 +77,7 @@ tags:
 | 字段                                    | 取值                       | 含义                                     |
 | ------------------------------------- | ------------------------ | -------------------------------------- |
 | `autoSaveInterval`                    | `10`                     | 自动 commit-and-sync 间隔（**分钟**），`0` 表示关闭 |
+| `autoBackupAfterFileChange`           | `false`                  | **必须为 `false`**；`true` 会改用「停止编辑 N 分钟后」的防抖触发，见下方提示 |
 | `disablePush`                         | `false`                  | `false`＝提交后推送；`true`＝只做本地提交            |
 | `pullBeforePush`                      | `true`                   | 推送前先拉取并合并远端改动                          |
 | `autoPullOnBoot`                      | `true`                   | Obsidian 启动时先拉取一次                      |
@@ -85,6 +87,18 @@ tags:
 | `disablePopups`                       | `false`                  | `false` 时每次同步会弹出提示                     |
 | `showStatusBar`                       | `true`                   | 在状态栏显示当前分支与同步状态                        |
 
+> [!warning] 两个开关只能留一个：`autoBackupAfterFileChange` 必须为 `false`
+> obsidian-git 里有**两条互斥**的「自动提交」路径，由 `autoBackupAfterFileChange` 决定走哪条：
+>
+> | `autoBackupAfterFileChange` | 实际机制 | 触发时机 |
+> | --- | --- | --- |
+> | `false`（推荐） | `window.setTimeout` 定时器 | **每 N 分钟**一次，与有没有编辑无关；提交完成后自动重排下一次 |
+> | `true` | `debounce` 防抖 | 只在**文件发生变动**时启动计时，**停止编辑 N 分钟后**才提交 |
+>
+> 踩坑点：`true` 时防抖函数只挂在 `vault` 的 `modify` / `create` / `delete` / `rename` 事件上。
+> 如果这段时间**没有任何文件改动**，函数连被调用的机会都没有 —— 自然一分钟都不会提交。
+> 本仓库要的是「每 10 分钟一次」的**定时**提交，所以必须是 `false`。
+
 ### 3.2 图形界面（等价操作）
 
 不想改文件时，可在 Obsidian 内操作：
@@ -92,6 +106,7 @@ tags:
 **设置 → Git → Automatic**
 
 - `Auto commit-and-sync interval` 填 **10**
+- **关闭** `Auto commit-and-sync after stopping file edits`（对应 `autoBackupAfterFileChange=false`）
 - 打开 `Push on commit-and-sync`（对应 `disablePush=false`）
 - 打开 `Pull on commit-and-sync`（对应 `pullBeforePush=true`）
 - 打开 `Auto pull on boot`
@@ -184,6 +199,7 @@ git status --short        # 下列内容会被提交
 - 确认 Obsidian 正在运行（插件的定时器只在运行时工作）；
 - 确认 obsidian-git 已启用（`设置 → 第三方插件`）；
 - 确认 `data.json` 的 `autoSaveInterval` 为 `10` 且已重载插件（见 3.3）；
+- 确认 `autoBackupAfterFileChange` 为 **`false`**。若为 `true`，定时器会被换成「停止编辑 N 分钟后」的防抖触发，**期间不动任何文件就永远不会提交**（这是最容易踩的坑，见 3.1 提示）；
 - 看状态栏是否有 Git 图标。
 
 **Q2：提示「有冲突」怎么办？**
