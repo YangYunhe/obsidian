@@ -1,417 +1,74 @@
-# ============================================================
-# Maven Wrapper & 部分需跟踪的构建产物
-# Maven Wrapper & build artifacts that SHOULD be tracked
-# ============================================================
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
+# ==============================================================================
+# Obsidian 技术文档库 —— .gitignore
+# ------------------------------------------------------------------------------
+# 目标：只提交「笔记 / 附件 / Obsidian 配置」，
+#       排除本地状态、缓存、密钥、系统垃圾与个人 AI 会话。
+# 说明文档：80-工具与环境/40-IDE与编辑器/10-Obsidian/Obsidian 仓库自动提交配置手册.md
+# ==============================================================================
 
-# ============================================================
-# 版本控制系统
-# Version Control System
-# ============================================================
-.git
-.svn
-
-# ============================================================
-# 操作系统生成文件
-# OS generated files
-# ============================================================
-# macOS Finder 目录属性缓存
-.DS_Store
-# Windows 缩略图缓存
-Thumbs.db
-# Windows 文件夹设置
-desktop.ini
-# Windows 视频缩略图缓存
-ehthumbs.db
-
-# ============================================================
-# Java / JVM 编译产物
-# Java / JVM compiled artifacts
-# ============================================================
-# Java 编译字节码
-*.class
-# Java 归档包
-*.jar
-# Java Web 应用归档
-*.war
-# Java 企业应用归档
-*.ear
-# Java 原生归档
-*.nar
-
-# ============================================================
-# 构建工具与输出目录
-# Build tools & output directories
-# ============================================================
-
-## Maven
-target
-/target/
-*/target/
-# Maven Shade 插件生成的精简 POM
-dependency-reduced-pom.xml
-
-## Gradle
-.gradle
-build
-/build/
-*/build/
-
-## 通用构建输出 / General build output
-out
-/out/
-*/out/
-classes
-/classes/
-*/classes/
-# webpack cache-loader 缓存
-.cache-loader
-
-## Sphinx 文档构建
-_build
-_images
-_modules
-_static
-
-## 日志文件 / Logs
-*.log
-logs
-/logs/
-*/logs/
-log
-/log/
-*/log/
-
-# ============================================================
-# IDE / 编辑器配置
-# IDE / Editor configurations
-# ============================================================
-
-## IntelliJ IDEA
-.idea
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-# IntelliJ 模块文件
-*.iml
-# IntelliJ 工作区文件（旧格式）
-*.iws
-# IntelliJ 项目文件（旧格式）
-*.ipr
-
-## Eclipse
-*.settings
-*.classpath
-*.project
-.settings/
-
-## VS Code
-.vscode/
-*.code-workspace
-
-## PyCharm
-.run
-
-# ============================================================
-# Python
-# ============================================================
-# Python 字节码缓存
-__pycache__
-__pycache__/
-# Python 编译文件
-*.pyc
-# Python 优化编译文件
-*.pyo
-# Python Windows 扩展模块
-*.pyd
-.ipynb_checkpoints
-# Jupyter Notebook 自动检查点
-.ipynb_checkpoints/
-# Jupyter 虚拟文档
-.virtual_documents/
-
-## Python 虚拟环境 / Virtual environment
-.venv/
-venv/
-# 环境变量文件（可能含密钥）
-.env
-# 环境目录
-env
-env_py3
-envpy3
-# Python 打包信息
-*.egg-info/
-# Python 打包产物
-*.egg
-# Python 分发包输出
-dist/
-dist
-/dist/
-
-## Python 测试与静态分析 / Test & static analysis
-# pytest/coverage 覆盖率数据
-.coverage
-cover
-# mypy 类型检查缓存
-.mypy_cache
-# tox 测试矩阵目录
-.tox
-# egg 临时目录
-.eggs
-
-## Python 包管理器 / Package managers
-# PDM 创建的虚拟环境解释器路径记录
-.pdm-python
-# Pipenv 锁文件（团队可酌情取消忽略）
-Pipfile.lock
-# pyenv 版本指定文件
-.python-version
-
-## Chroma 向量数据库
-chroma
-chroma/
-
-# ============================================================
-# C/C++ / CLion
-# ============================================================
-cmake-build-debug
-cmake-build-release/
-cmake-build-*/
-CMakeLists.txt
-
-# ============================================================
-# Node.js / 前端
-# Node.js / Frontend
-# ============================================================
-node_modules
-node_modules/
-.pnpm-store/
-.yarn/
-# TypeScript 增量编译信息
-*.tsbuildinfo
-# webpack entry 生成文件
-*.entry.js
-# JavaScript sourcemap
-*.js.map
-*.map
-# 压缩后的 JS
-*.min.js
-# npm 调试日志
-npm-debug.log*
-# yarn 错误日志
-yarn-error.log
-
-## Monorepo 多包场景 / Monorepo workspaces
-plugins/*/package-lock.json
-packages/*/package-lock.json
-
-# ============================================================
-# ML / 数据 / 模型
-# Machine Learning / Data / Models
-# ============================================================
-datasets
-datasets/
-dict
-dict/
-embeddings
-embeddings/
-# Rasa 对话 AI 框架生成文件
-.rasa
-.rasa/
-# ML models directory (NOT app/models/ — those are SQLAlchemy ORM models)
-/models/
-models
-!app/models/
-bge-base-zh-v1.5
-bge-base-zh-v1.5/
-
-# ============================================================
-# 数据库文件
-# Database files
-# ============================================================
-# SQLite 数据库
-*.db
-*.sqlite
-*.sqlite3
-# SQLite 数据库（旧命名）
-*.sqllite
-# DuckDB 数据库
-*.duckdb
-# Superset 本地应用数据库
-app.db
-# Redis 持久化数据
-dump.rdb
-
-# ============================================================
-# 压缩归档文件
-# Compressed archives
-# ============================================================
-*.tar.gz
-*.rar
-*.zip
-*.7z
-*.gz
-*.bz2
-*.xz
-
-# ============================================================
-# Obsidian 个人配置（不共享）
-# Obsidian personal config (do not share)
-# ============================================================
-# 工作区布局状态（频繁变动）
+# ------------------------------------------------------------------------------
+# 1. Obsidian 本地状态（与设备绑定、频繁变动，无同步价值）
+# ------------------------------------------------------------------------------
 .obsidian/workspace.json
-# 移动端工作区布局状态
 .obsidian/workspace-mobile.json
-# 个人自定义快捷键
 .obsidian/hotkeys.json
-# Obsidian 回收站
+
+# ------------------------------------------------------------------------------
+# 2. 缓存目录
+# ------------------------------------------------------------------------------
+.obsidian/cache
+.cache
+.temp_cache
+
+# ------------------------------------------------------------------------------
+# 3. 插件本地数据（可能含 Token / 密码 / 本机绝对路径）
+#    如需一并同步插件设置：删除下面这行，并先确认其中不含任何密钥
+# ------------------------------------------------------------------------------
+.obsidian/plugins/*/data.json
+
+# ------------------------------------------------------------------------------
+# 4. Obsidian 回收站
+# ------------------------------------------------------------------------------
 .trash/
 
-# ============================================================
-# Claude Code / AI 工具配置
-# Claude Code / AI tools
-# ============================================================
+# ------------------------------------------------------------------------------
+# 5. 知识库原料（未整理的原始素材，不入库）
+# ------------------------------------------------------------------------------
+raw
+
+# ------------------------------------------------------------------------------
+# 6. AI / Claude 工具（本地会话记录与个人配置）
+# ------------------------------------------------------------------------------
+.claudian/
 .claude/*
 !.claude/skills/
 .claude/settings.local.json
-.claude_rc*
-.aider*
 CLAUDE.local.md
-PROJECT.md
-# Roo Code 本地配置
-.roo
 
-# ============================================================
-# 临时与备份文件
-# Temporary & backup files
-# ============================================================
-# 通用临时文件
+# ------------------------------------------------------------------------------
+# 7. 操作系统垃圾文件
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# ------------------------------------------------------------------------------
+# 8. 编辑器临时 / 备份文件
+# ------------------------------------------------------------------------------
 *.tmp
 *.temp
-# Vim 交换文件
 *.swp
 *.swo
 *.swn
-# Unix 备份文件（如 filename~）
 *~
-# 通用备份文件
 *.bak
-# 合并工具生成的原始文件备份
 *.orig
-# 补丁被拒绝的片段
 *.rej
 
-# ============================================================
-# 系统 / 杂项
-# System / Miscellaneous
-# ============================================================
-# 锁文件（需根据具体项目判断是否忽略）
-*.lock
-.cache
-.bento*
-.local
-.envrc
-.direnv
-.temp_cache
-# Synology NAS 缩略图目录
-@eaDir/
-tmp
-cache/
-
-# ============================================================
-# 生成产物输出目录
-# Generated output directory
-# ============================================================
-out/
-oxc-custom-build/
-
-# ============================================================
-# uni-app / 前端
-# uni-app / Frontend
-# ============================================================
-dist
-dist/
-*.local
-
-# uni-app 构建自动生成（根目录）
-# project.config.json 需要纳入版本控制，以便微信开发者工具定位小程序目录
-app.miniapp.json
-project.miniapp.json
-project.private.config.json
-i18n/
-
-# ============================================================
-# 微信小程序 CI
-# ============================================================
-scripts/ci.config.json
-scripts/ci.private.key
-
-# ============================================================
-# 知识库原料
-# ============================================================
-raw
-
-# ============================================================
-# Apache Superset 专属
-# Apache Superset specific
-# ============================================================
-
-## 运行配置（本地覆盖，不入库）
-/superset_config.py
-/superset_text.yml
-local_config.py
-superset/bin/supersetc
-superset/app/
-
-## 前端构建产物 / Frontend build artifacts
-superset/static/*
-superset/static/assets/*
-!superset/static/assets/.gitkeep
-superset/static/uploads/*
-!superset/static/uploads/.gitkeep
-
-## 翻译产物 / Translation artifacts
-superset/translations/**/messages.json
-superset/translations/**/messages.mo
-
-## websocket 配置
-superset-websocket/config.json
-docker/superset-websocket/config.json
-
-## 发布 / 构建产物
-apache-superset-*.tar.gz*
-apache_superset-*.tar.gz*
-release.json
-changelog.sh
-test-changelog.md
-rat-results.txt
-test-report.html
-superset/static/stats/statistics.html
-scripts/*.zip
-
-## 测试数据 / Test data
-celery_results.sqlite
-celerydb.sqlite
-celerybeat-schedule
-celerybeat.pid
-geckodriver.log
-ghostdriver.log
-testCSV.csv
-.terser-plugin-cache/
-
-## 本地依赖文件
-docker/requirements-local.txt
-
-# ============================================================
-# 组件编排（docker-compose-deployer）专属
-# Component orchestration specific
-# ============================================================
-docker-compose.override.yml
-components/*/docker-compose.override.yml
-components/*/docker/superset-websocket/config.json
-# 各组件本地环境变量覆盖（如 .env-local）
-components/*/docker/*local*
-.env.local
+# ------------------------------------------------------------------------------
+# 9. 日志
+# ------------------------------------------------------------------------------
+*.log
+logs/
+log/
