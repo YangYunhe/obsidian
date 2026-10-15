@@ -175,21 +175,60 @@ git status --short        # 下列内容会被提交
 - `.obsidian/` 的核心配置：`app.json`、`appearance.json`、`core-plugins.json`、`community-plugins.json`、`graph.json`、`templates.json`
 - `.obsidian/plugins/*/` 的**配置**：`data.json`、`manifest.json`（不含 `main.js` / `styles.css`）
 
-### 附：历史提交里的插件本体
+### 附：历史里的插件本体（已清理）
 
-`.gitignore` 只约束**之后**的提交，`git rm --cached` 也只把它们从**当前索引**里移除。
-此前 `05c4935` 已把约 8.7 MB 的插件本体写进历史，这些数据仍留在 `.git` 中。若要彻底清除（可选）：
+`.gitignore` 只约束**之后**的提交，`git rm --cached` 也只把它们从当前索引里移除。已经写进历史的 blob 会一直留在 `.git` 里——旧提交仍然引用它，`git gc` 回收不了。本项目已执行过一次清理：
+
+| | 清理前 | 清理后 |
+| --- | --- | --- |
+| `.git` 体积 | 5.7 M | **264 K** |
+| 历史中的插件本体 | 6 个对象 / 8.3 MB（解压） | 无 |
+| 工作区的插件文件 | — | **一个没动**（6 个文件逐字节校验一致） |
+| 全新克隆下载量 | 4.1 M | **188 K** |
+
+本机没装 `git-filter-repo`，用 git 自带的 `filter-branch` 就够（提交少时完全没问题）：
 
 ```bash
 cd ~/文档/obsidian
-git filter-repo \
-  --path-glob '.obsidian/plugins/*/main.js' \
-  --path-glob '.obsidian/plugins/*/styles.css' \
-  --invert-paths          # 需要先安装 git-filter-repo
-git push --force origin main
+
+# 0) 改写前工作区必须干净（data.json 已入库，改过插件设置就会变脏）
+git status --short
+
+# 1) 改写：--index-filter 只操作索引与对象库，从不触碰工作区文件
+FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch --force --index-filter \
+  'git rm --cached --ignore-unmatch \
+     .obsidian/plugins/obsidian-excalidraw-plugin/main.js \
+     .obsidian/plugins/obsidian-excalidraw-plugin/styles.css \
+     .obsidian/plugins/obsidian-git/main.js \
+     .obsidian/plugins/obsidian-git/styles.css \
+     .obsidian/plugins/realclaudian/main.js \
+     .obsidian/plugins/realclaudian/styles.css' \
+  --prune-empty -- --all
+
+# 2) 校验插件文件没被动过（应无输出）
+git status --short
+
+# 3) 拆掉 filter-branch 留下的安全网 ref，否则第 5 步的回收白做
+git update-ref -d refs/original/refs/heads/main
+git reflog expire --expire=now --all
+git gc --prune=now
+
+# 4) 确认历史里已无插件本体（应无输出）
+git rev-list --objects --all | grep -E 'plugins/.*(main\.js|styles\.css)$'
+
+# 5) 强推。--force-with-lease 钉住推送前的旧 HEAD，避免覆盖别人的新提交
+git push --force-with-lease=refs/heads/main:<推送前的HEAD全SHA> origin main
 ```
 
-> 这会**改写历史**。若已有其它机器克隆过，需重新克隆。单人仓库影响不大。
+**坑点**
+
+- 过滤命令里的路径要**逐个写全**。`--index-filter` 的字符串是交给 `sh` 执行的，写 `.obsidian/plugins/*/main.js` 会被 shell 当通配符展开，而不是 git 路径。
+- 改写前工作区必须干净，否则直接报「无法重写分支：您有未暂存的变更」。
+- `filter-branch` 会把旧历史存到 `refs/original/` 当安全网；不删它，第 5 步的回收就是白做。
+- 改写后**所有提交的 SHA 都会变**（内容不变），任何按旧 SHA 记录的引用／书签都会失效。
+- GitHub 端**不会立刻**释放空间：远端仓库里的旧对象要等 GitHub 自己 GC（想立刻清得联系 support）。本地 `.git` 是立即变小的。
+
+**回滚**：改写前把整个仓库（含 `.git`）`cp -a` 备份一份，出问题覆盖回来即可。
 
 ## 五、相对旧版 .gitignore 的改动
 
