@@ -52,7 +52,8 @@ tags:
 
 文件位置：`.obsidian/plugins/obsidian-git/data.json`
 
-> 该文件已被 `.gitignore` 排除（见第四节），仅保存在本地，不会同步到远端。
+> 该文件**会入库**（见第四节），所以换机器克隆后插件设置可直接复用。
+> 代价是要自己保证其中不含 Token / 密码——入库前请按第四节的检查方法过一遍。
 
 ```json
 {
@@ -144,7 +145,7 @@ tags:
 | `.obsidian/workspace.json`<br>`.obsidian/workspace-mobile.json` | 本地状态 | 记录窗口布局、打开的文件，**每台设备各不相同**且频繁变动，入库只会产生噪声冲突 |
 | `.obsidian/hotkeys.json` | 本地状态 | 个人快捷键，属本机偏好 |
 | `.obsidian/cache`、`.cache`、`.temp_cache` | 缓存 | 可再生的缓存数据，无版本价值 |
-| `.obsidian/plugins/*/data.json` | 密钥风险 | 插件本地配置，**可能含 Token / 密码 / 本机绝对路径**（如 obsidian-git 的凭据） |
+| `.obsidian/plugins/*/main.js`<br>`.obsidian/plugins/*/styles.css` | 插件本体 | 插件打包后的代码与样式，**单文件最大 4.9 MB**（excalidraw 4.9 M + realclaudian 2.3 M + obsidian-git 0.76 M ≈ 8.7 MB），可随时从社区重装；入库只会让仓库与克隆变慢 |
 | `.trash/` | 回收站 | Obsidian 删除的临时文件 |
 | `raw` | 原料 | 未整理的原始素材，不入版本库 |
 | `.claudian/` | 个人数据 | Claudian 的会话记录，含私人对话，且体积随时间增长 |
@@ -172,7 +173,23 @@ git status --short        # 下列内容会被提交
 - 所有笔记（`README.md`、`00-总览/` … `99-归档/`、`附件/`）
 - `.gitignore`
 - `.obsidian/` 的核心配置：`app.json`、`appearance.json`、`core-plugins.json`、`community-plugins.json`、`graph.json`、`templates.json`
-- `.obsidian/plugins/*/` 的插件本体与 `manifest.json`（不含 `data.json`）
+- `.obsidian/plugins/*/` 的**配置**：`data.json`、`manifest.json`（不含 `main.js` / `styles.css`）
+
+### 附：历史提交里的插件本体
+
+`.gitignore` 只约束**之后**的提交，`git rm --cached` 也只把它们从**当前索引**里移除。
+此前 `05c4935` 已把约 8.7 MB 的插件本体写进历史，这些数据仍留在 `.git` 中。若要彻底清除（可选）：
+
+```bash
+cd ~/文档/obsidian
+git filter-repo \
+  --path-glob '.obsidian/plugins/*/main.js' \
+  --path-glob '.obsidian/plugins/*/styles.css' \
+  --invert-paths          # 需要先安装 git-filter-repo
+git push --force origin main
+```
+
+> 这会**改写历史**。若已有其它机器克隆过，需重新克隆。单人仓库影响不大。
 
 ## 五、相对旧版 .gitignore 的改动
 
@@ -217,8 +234,21 @@ git push origin main
 **Q3：换一台电脑怎么恢复？**
 插件配置（`data.json`）不入库，需在新机器上重新：安装并启用 obsidian-git → 按 3.1/3.2 配置。笔记与附件会自动同步过来。
 
-**Q4：想让插件配置也同步？**
-删除 `.gitignore` 中 `.obsidian/plugins/*/data.json` 一行，并**先确认其中不含任何 Token / 密码**。
+**Q4：想让插件的代码本体也同步？**
+删掉 `.gitignore` 里 `.obsidian/plugins/*/main.js` 与 `.obsidian/plugins/*/styles.css` 两行即可。
+但这三份文件合计约 **8.7 MB**，会让仓库与克隆明显变慢，通常没必要——换机时从社区重装更省事。
+
+**Q4b：入库 `data.json` 会不会泄露密钥？**
+会，所以入库前必须检查。本仓库的检查方法：
+
+```bash
+cd ~/文档/obsidian
+# 挑出可能存放密钥的字段名（只看字段，不看值）
+grep -oiE '"[^"]*(token|secret|password|api_?key|credential)[^"]*"' .obsidian/plugins/*/data.json | sort -u
+```
+
+本仓库当前结果：`obsidian-git` 无此类字段；`excalidraw` 有 `taskboneAPIkey`，以及 AI 供应商配置里的 `apiKey` —— **均为空**，可以安全入库。
+今后若给这些插件填过任何 Key，**填入前请先把它从版本库里拿掉**（或改用环境变量）。
 
 **Q5：想改提交间隔？**
 把 `autoSaveInterval` 改成想要的分钟数（如 `5`、`30`），或直接在设置界面改。
