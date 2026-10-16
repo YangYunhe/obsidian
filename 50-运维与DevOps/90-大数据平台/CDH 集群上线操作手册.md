@@ -18,7 +18,7 @@ tags:
 | ---- | ----------------------------------------------------------- |
 | 集群   | `sy-fqz01` ~ `sy-fqz05`（5 节点）                               |
 | IP   | **待定**，本文暂按 `10.0.0.11` ~ `10.0.0.15` 书写（上线前以实际为准，全文替换即可）   |
-| 系统   | CentOS 7.x（x86_64）                                          |
+| 系统   | RHEL 7.9（x86_64）                                          |
 | 版本   | Cloudera Manager **6.3.1** + CDH **6.3.2**（Parcel）          |
 | JDK  | Oracle JDK **1.8（8u181）**，随 CM 源中的 `oracle-j2sdk1.8` RPM 安装 |
 | 网络   | **离线环境**：无外网，所有软件包须提前备齐并内网分发                                |
@@ -37,11 +37,11 @@ tags:
 
 | 主机名      | IP（暂定）    | CPU      | 内存       | 系统盘 | 数据盘                    | 操作系统       |
 | -------- | --------- | -------- | -------- | --- | ---------------------- | ---------- |
-| sy-fqz01 | 10.0.0.11 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
-| sy-fqz02 | 10.0.0.12 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
-| sy-fqz03 | 10.0.0.13 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
-| sy-fqz04 | 10.0.0.14 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
-| sy-fqz05 | 10.0.0.15 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
+| sy-fqz01 | 10.0.0.11 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
+| sy-fqz02 | 10.0.0.12 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
+| sy-fqz03 | 10.0.0.13 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
+| sy-fqz04 | 10.0.0.14 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
+| sy-fqz05 | 10.0.0.15 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
 
 ### 1.2 角色分布
 
@@ -155,12 +155,12 @@ sysctl -p
 ### 2.9 确认 Python 2.7（Hue 依赖）
 
 ```bash
-python -V      # 期望 Python 2.7.5（CentOS 7 自带）
+python -V      # 期望 Python 2.7.5（RHEL 7 自带）
 ```
 
 ### 2.10 时间同步：服务状态与开机启动（**已配置，仅验证**）
 
-> NTP 已统一配置，本节只做验证，不重复配置。CentOS 7 可能用 `ntpd`，也可能用 `chronyd`，先确认实际在用哪个。
+> NTP 已统一配置，本节只做验证，不重复配置。RHEL 7 可能用 `ntpd`，也可能用 `chronyd`，先确认实际在用哪个。
 
 ```bash
 # 1) 确认在用哪个时间服务（二选一，有一个 active 即可）
@@ -213,21 +213,30 @@ chronyc sources    # chronyd：行首带 ^* 表示当前同步源
 | 扩展包 | `GPLEXTRAS-6.0.1-1.gplextras6.0.1.p0.590678-el7.parcel`（+ `.sha`） |
 | JDBC | `mysql-connector-java-5.1.49.jar` |
 | MySQL | `mysql-community-*` 5.7 的离线 RPM 集合 |
-| 系统依赖 | `createrepo`、`httpd`、`cyrus-sasl-gssapi`、`fuse-libs`、`MySQL-python`、`openssl-devel`、`libxslt` 等（建议用内部 CentOS 7 镜像或 ISO 直接 yum） |
+| 系统依赖 | `createrepo`、`httpd`、`cyrus-sasl-gssapi`、`fuse-libs`、`MySQL-python`、`openssl-devel`、`libxslt` 等（RHEL 无公开镜像，须用 Red Hat 订阅源、内部 Satellite/镜像，或 RHEL 7.9 安装 ISO 做本地源） |
 
 ### 3.2 配置内网 yum 源（sy-fqz01）
 
 ```bash
-# 1) 关闭联网 repo，指向内部镜像/ISO
+# 1) 关闭联网 repo，指向内部镜像 / 本地 ISO
 mkdir -p /etc/yum.repos.d/bak && mv /etc/yum.repos.d/*.repo /etc/yum.repos.d/bak/ 2>/dev/null
 cat > /etc/yum.repos.d/local-base.repo <<'EOF'
-[local-base]
-name=Local CentOS 7 Base
-baseurl=http://<内网镜像或本机挂载 ISO>/centos7
+[rhel-7-local]
+name=RHEL 7.9 Local Repo
+baseurl=http://<内网镜像>/rhel7.9
+# 若用安装 ISO：baseurl=file:///mnt/rhel7.9
 enabled=1
 gpgcheck=0
 EOF
 ```
+
+> **RHEL 无公开镜像**：离线 base 源来自 **Red Hat 订阅（内网 Satellite / 镜像）** 或 **RHEL 7.9 安装 ISO**。用 ISO 时先挂载：
+>
+> ```bash
+> mount -o loop /path/to/RHEL-7.9-x86_64-dvd.iso /mnt/rhel7.9
+> ```
+>
+> RHEL 7 默认启用订阅校验，离线 ISO 源下需 `gpgcheck=0`（如上面配置），并确保 `rhel-7-server-rpms` 等所需仓库（含 `optional`）已并入本地源。
 
 ### 3.3 制作 CM yum 源（sy-fqz01）
 
