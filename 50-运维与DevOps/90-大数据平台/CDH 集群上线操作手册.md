@@ -35,34 +35,34 @@ tags:
 
 ### 1.1 节点信息
 
-| 主机名      | IP（暂定）    | CPU  | 内存   | 系统盘 | 数据盘                    | 操作系统       |
-| -------- | --------- | ---- | ---- | --- | ---------------------- | ---------- |
-| sy-fqz01 | 10.0.0.11 | 32核  | 512G |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
-| sy-fqz02 | 10.0.0.12 | 32 核 | 512G |     | 视情况                    | CentOS-7.9 |
-| sy-fqz03 | 10.0.0.13 | 32 核 | 512G |     | 视情况                    | CentOS-7.9 |
-| sy-fqz04 | 10.0.0.14 | 32 核 | 512G |     | 视情况                    | CentOS-7.9 |
-| sy-fqz05 | 10.0.0.15 | 32核  | 512G |     | 视情况                    | CentOS-7.9 |
+| 主机名      | IP（暂定）    | CPU      | 内存       | 系统盘 | 数据盘                    | 操作系统       |
+| -------- | --------- | -------- | -------- | --- | ---------------------- | ---------- |
+| sy-fqz01 | 10.0.0.11 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
+| sy-fqz02 | 10.0.0.12 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
+| sy-fqz03 | 10.0.0.13 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
+| sy-fqz04 | 10.0.0.14 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
+| sy-fqz05 | 10.0.0.15 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | CentOS-7.9 |
 
 ### 1.2 角色分布
 
-| 服务 / 角色 | sy-fqz01 | sy-fqz02 | sy-fqz03 | sy-fqz04 | sy-fqz05 |
-| --- | :-: | :-: | :-: | :-: | :-: |
-| Cloudera Manager Server | ● | | | | |
-| Cloudera Manager Agent | ● | ● | ● | ● | ● |
-| MySQL（CM / Hive / Hue 元库） | ● | | | | |
-| Httpd（离线 yum 源） | ● | | | | |
-| ZooKeeper Server | | ● | ● | ● | |
-| JournalNode | | ● | ● | ● | |
-| NameNode | | ● Active | ● Standby | | |
-| ZKFC（Failover Controller） | | ● | ● | | |
-| DataNode | | ● | ● | ● | ● |
-| ResourceManager | | ● Active | ● Standby | | |
-| JobHistory Server | | ● | | | |
-| NodeManager | | ● | ● | ● | ● |
-| Hive Metastore Server | ● | | | | |
-| HiveServer2 | ● | | | | |
-| Hue Server | ● | | | | |
-| Gateway（客户端） | ● | ● | ● | ● | ● |
+| 服务 / 角色                   | sy-fqz01 | sy-fqz02 | sy-fqz03  | sy-fqz04 | sy-fqz05 |
+| ------------------------- | :------: | :------: | :-------: | :------: | :------: |
+| Cloudera Manager Server   |    ●     |          |           |          |          |
+| Cloudera Manager Agent    |    ●     |    ●     |     ●     |    ●     |    ●     |
+| MySQL（CM / Hive / Hue 元库） |    ●     |          |           |          |          |
+| Httpd（离线 yum 源）           |    ●     |          |           |          |          |
+| ZooKeeper Server          |          |    ●     |     ●     |    ●     |          |
+| JournalNode               |          |    ●     |     ●     |    ●     |          |
+| NameNode                  |          | ● Active | ● Standby |          |          |
+| ZKFC（Failover Controller） |          |    ●     |     ●     |          |          |
+| DataNode                  |    ●     |    ●     |     ●     |    ●     |    ●     |
+| ResourceManager           |          | ● Active | ● Standby |          |          |
+| JobHistory Server         |          |    ●     |           |          |          |
+| NodeManager               |    ●     |    ●     |     ●     |    ●     |    ●     |
+| Hive Metastore Server     |    ●     |          |           |          |          |
+| HiveServer2               |    ●     |          |           |          |          |
+| Hue Server                |    ●     |          |           |          |          |
+| Gateway（客户端）              |    ●     |    ●     |     ●     |    ●     |    ●     |
 
 ### 1.3 规划说明
 
@@ -70,7 +70,7 @@ tags:
 - **ResourceManager HA 三要素**：2 个 ResourceManager（sy-fqz02/03）+ 共用上述 ZooKeeper 仲裁；RM 状态存于 ZooKeeper，Active/Standby 自动切换。（JobHistory Server 为单实例，不支持 HA。）
 - sy-fqz01 为 **Utility/管理节点**：CM、MySQL、离线源、Hive/Hue 前端。
 - sy-fqz02/03 为 **Master**，同时兼跑 DataNode/NodeManager（小集群常见）。
-- sy-fqz04/05 为 **Worker**。
+- sy-fqz01/05 为 **Worker**。
 - JournalNode 与 ZooKeeper 数量必须为**奇数且 ≥3**，否则 HA 无仲裁能力。
 
 ## 二、基础环境准备（**在所有节点执行**）
@@ -158,17 +158,47 @@ sysctl -p
 python -V      # 期望 Python 2.7.5（CentOS 7 自带）
 ```
 
-### 2.10 时间同步验证（**NTP 已配置，仅验证**）
+### 2.10 时间同步：服务状态与开机启动（**已配置，仅验证**）
+
+> NTP 已统一配置，本节只做验证，不重复配置。CentOS 7 可能用 `ntpd`，也可能用 `chronyd`，先确认实际在用哪个。
 
 ```bash
-# 各节点时区应为 Asia/Shanghai
-timedatectl | grep -E 'Time zone|synchronized'
+# 1) 确认在用哪个时间服务（二选一，有一个 active 即可）
+systemctl is-active ntpd       && echo "使用 ntpd"
+systemctl is-active chronyd    && echo "使用 chronyd"
 
-# 各节点查看同步源，remote 前带 * 表示当前正在同步（客户端启动后可能需等待几分钟）
-ntpq -p
+# 2) 服务运行状态（期望 active (running)）
+systemctl status ntpd | head -5          # 或 systemctl status chronyd
+
+# 3) 是否开机自启（期望 enabled，这是重点）
+systemctl is-enabled ntpd                # 或 systemctl is-enabled chronyd
 ```
 
-期望：所有节点时区一致，且 `ntpq -p` 中存在带 `*` 的正常同步源。
+期望输出（以 ntpd 为例）：
+
+```plain
+active
+enabled
+```
+
+```bash
+# 4) 时区一致（期望 Asia/Shanghai）
+timedatectl | grep -E 'Time zone|synchronized'
+
+# 5) 同步源是否正常
+ntpq -p            # ntpd：remote 前带 * 表示当前同步源
+chronyc sources    # chronyd：行首带 ^* 表示当前同步源
+```
+
+期望：所有节点时区一致；同步源存在带 `*`（或 `^*`）的正常条目（客户端启动后可能需等待几分钟）。
+
+> 若第 2 步不是 `active`、或第 3 步不是 `enabled`，在**所有节点**按实际服务补做：
+>
+> ```bash
+> systemctl enable ntpd --now       # 或 systemctl enable chronyd --now
+> ```
+>
+> 确认后再次执行第 2、3 步复核。
 
 ## 三、离线软件准备与内网 yum 源
 
@@ -548,7 +578,7 @@ Hue 会自动集成 HDFS / YARN / Hive（若页面提示未连接 Hive，检查 
 | YARN 切换 | `yarn rmadmin -failover` 演练 | 主备互换成功、提交作业不中断 |
 | Hive | `beeline` → `SHOW DATABASES` | 正常返回 |
 | Hue | `http://sy-fqz01:8888` | 可登录，HDFS/YARN/Hive 图标正常 |
-| 时间同步 | `ntpq -p`（各节点） | 存在带 `*` 的同步源 |
+| 时间同步（NTP） | `systemctl is-active ntpd` / `is-enabled ntpd` + `ntpq -p`（各节点） | 服务 `active` **且** `enabled`；存在带 `*` 的同步源 |
 | Agent | `systemctl status cloudera-scm-agent`（各节点） | active (running) |
 
 ## 附录
