@@ -501,7 +501,7 @@ createrepo .
 
 访问 http://cdh-01/cm6.3.1/ ：
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706346653943-709c508d-dcc8-4f35-a36c-c3eecfc9ffbd.png)
+![[cdh-deploy-01.png]]
 
 创建 /etc/yum.repos.d/cm.repo 文件，内容如下：
 
@@ -590,56 +590,56 @@ systemctl status cloudera-scm-server
 
 访问 CM Web UI：http://cdh-01:7180
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348307601-71b4e9b7-cbe3-454f-979d-bf1a3bd93b30.png)
+![[cdh-deploy-02.png]]
 
 ## 集群初始化
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348395343-4a429551-2799-4013-b823-904914b6785f.png)
+![[cdh-deploy-03.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348429363-2242ad08-11c5-4856-95bd-07ccdbd7c0ee.png)
+![[cdh-deploy-04.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348480888-8359f339-b8d8-4b3e-8118-be8cdeeafca3.png)
+![[cdh-deploy-05.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348481045-f86c3212-d77a-4259-ab74-68e8a2ddca3d.png)
+![[cdh-deploy-06.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348480690-44bfff2f-4f99-421c-914f-fb8febe00b03.png)
+![[cdh-deploy-07.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348863156-f802c066-ffa6-4ce3-995b-eba4ba632b6e.png)
+![[cdh-deploy-08.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348909457-c29bb748-2e2d-4761-b121-21ae35121b7c.png)
+![[cdh-deploy-09.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706349069336-71431320-8824-452b-a7da-229fde79397b.png)
+![[cdh-deploy-10.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706349152720-bc6ac2a0-e007-458f-9dd1-a08bb5f30aa0.png)
+![[cdh-deploy-11.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706355237279-30395c2a-d3cc-4868-8e56-7797d9d36fd9.png)
+![[cdh-deploy-12.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706349355614-ef5cd642-2caa-4d6d-a0bd-edba091e289b.png)
+![[cdh-deploy-13.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706349644652-fc66904e-2f2e-4b7e-80ec-84760038489d.png)
+![[cdh-deploy-14.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706350409092-a225b7bc-048d-4210-b4e8-46fcda4bac4b.png)
+![[cdh-deploy-15.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348484478-2054048e-d63e-484a-95eb-91c8124b2499.png)
+![[cdh-deploy-16.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706348485894-5a61e1df-51cf-49cc-b79e-d8bb0dd803c9.png)
+![[cdh-deploy-17.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706350143787-151677d0-578d-463d-b6ce-cf249b16aad7.png)
+![[cdh-deploy-18.png]]
 
 按照规划选择角色分布：
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706350437013-f964f05d-407f-4b9d-a8df-19739deeead6.png)
+![[cdh-deploy-19.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706350619789-b04c091d-f5d6-4e09-a82b-add5eeb140eb.png)
+![[cdh-deploy-20.png]]
 
 【审核更改】这一页很长，在生产环境部署时，要仔细核对这些配置，保证数据盘配置的正确、邮件告警相关的配置正确
 
-![](https://cdn.nlark.com/yuque/0/2024/webp/12575297/1706350811660-1067b1b0-321d-4818-bc7b-1cafaedaa881.webp)
+![[cdh-deploy-21.webp]]
 
-![](https://cdn.nlark.com/yuque/0/2024/webp/12575297/1706350931204-9fdbe89e-a0c3-424f-a310-698f509bbf2c.webp)
+![[cdh-deploy-22.webp]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706351198966-875da764-f8c9-4181-b34e-3a3f3c5ff70f.png)
+![[cdh-deploy-23.png]]
 
-![](https://cdn.nlark.com/yuque/0/2024/png/12575297/1706351277318-97359543-ea87-4faa-b24c-c636330ad2d9.png)
+![[cdh-deploy-24.png]]
 
 ## 相关
 
