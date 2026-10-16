@@ -501,7 +501,7 @@ createrepo .
 
 访问 http://cdh-01/cm6.3.1/ ：
 
-![[cdh-deploy-01.png]]
+![[assets/cdh-deploy-01.png]]
 
 创建 /etc/yum.repos.d/cm.repo 文件，内容如下：
 
@@ -590,56 +590,56 @@ systemctl status cloudera-scm-server
 
 访问 CM Web UI：http://cdh-01:7180
 
-![[cdh-deploy-02.png]]
+![[assets/cdh-deploy-02.png]]
 
 ## 集群初始化
-![[cdh-deploy-03.png]]
+![[assets/cdh-deploy-03.png]]
 
-![[cdh-deploy-04.png]]
+![[assets/cdh-deploy-04.png]]
 
-![[cdh-deploy-05.png]]
+![[assets/cdh-deploy-05.png]]
 
-![[cdh-deploy-06.png]]
+![[assets/cdh-deploy-06.png]]
 
-![[cdh-deploy-07.png]]
+![[assets/cdh-deploy-07.png]]
 
-![[cdh-deploy-08.png]]
+![[assets/cdh-deploy-08.png]]
 
-![[cdh-deploy-09.png]]
+![[assets/cdh-deploy-09.png]]
 
-![[cdh-deploy-10.png]]
+![[assets/cdh-deploy-10.png]]
 
-![[cdh-deploy-11.png]]
+![[assets/cdh-deploy-11.png]]
 
-![[cdh-deploy-12.png]]
+![[assets/cdh-deploy-12.png]]
 
-![[cdh-deploy-13.png]]
+![[assets/cdh-deploy-13.png]]
 
-![[cdh-deploy-14.png]]
+![[assets/cdh-deploy-14.png]]
 
-![[cdh-deploy-15.png]]
+![[assets/cdh-deploy-15.png]]
 
-![[cdh-deploy-16.png]]
+![[assets/cdh-deploy-16.png]]
 
-![[cdh-deploy-17.png]]
+![[assets/cdh-deploy-17.png]]
 
-![[cdh-deploy-18.png]]
+![[assets/cdh-deploy-18.png]]
 
 按照规划选择角色分布：
 
-![[cdh-deploy-19.png]]
+![[assets/cdh-deploy-19.png]]
 
-![[cdh-deploy-20.png]]
+![[assets/cdh-deploy-20.png]]
 
 【审核更改】这一页很长，在生产环境部署时，要仔细核对这些配置，保证数据盘配置的正确、邮件告警相关的配置正确
 
-![[cdh-deploy-21.webp]]
+![[assets/cdh-deploy-21.webp]]
 
-![[cdh-deploy-22.webp]]
+![[assets/cdh-deploy-22.webp]]
 
-![[cdh-deploy-23.png]]
+![[assets/cdh-deploy-23.png]]
 
-![[cdh-deploy-24.png]]
+![[assets/cdh-deploy-24.png]]
 
 ## 相关
 
