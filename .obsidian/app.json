@@ -1,6 +1,7 @@
 {
   "readableLineLength": false,
   "promptDelete": false,
-  "attachmentFolderPath": "附件",
-  "alwaysUpdateLinks": true
+  "attachmentFolderPath": "./assets",
+  "alwaysUpdateLinks": true,
+  "newLinkFormat": "relative"
 }
