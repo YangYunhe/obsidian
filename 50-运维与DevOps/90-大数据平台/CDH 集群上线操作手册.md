@@ -18,11 +18,11 @@ tags:
 | ---- | ----------------------------------------------------------- |
 | 集群   | `sy-fqz01` ~ `sy-fqz05`（5 节点）                               |
 | IP   | **待定**，本文暂按 `10.0.0.11` ~ `10.0.0.15` 书写（上线前以实际为准，全文替换即可）   |
-| 系统   | RHEL 7.9（x86_64）                                          |
+| 系统   | RHEL 7.9（x86_64）                                            |
 | 版本   | Cloudera Manager **6.3.1** + CDH **6.3.2**（Parcel）          |
-| JDK  | Oracle JDK **1.8（8u181）**，随 CM 源中的 `oracle-j2sdk1.8` RPM 安装 |
+| JDK  | Oracle JDK **1.8（8u181）**，**手动解压安装**到 `/usr/java/jdk`（不使用 RPM，见 §4.1） |
 | 网络   | **离线环境**：无外网，所有软件包须提前备齐并内网分发                                |
-| 时间同步 | **NTP 已统一配置**，本文只做验证（见 §2.10），不重复配置                         |
+| 时间同步 | **NTP 已统一配置**，本文只做验证（见 §2.12），不重复配置                         |
 | 目标组件 | HDFS（**NameNode HA**）、YARN（**ResourceManager HA**）、Hive、Hue |
 | 依赖组件 | ZooKeeper、JournalNode（两处 HA 必需）、Cloudera Manager、MySQL 5.7  |
 
@@ -35,13 +35,13 @@ tags:
 
 ### 1.1 节点信息
 
-| 主机名      | IP（暂定）    | CPU      | 内存       | 系统盘 | 数据盘                    | 操作系统       |
-| -------- | --------- | -------- | -------- | --- | ---------------------- | ---------- |
-| sy-fqz01 | 10.0.0.11 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
-| sy-fqz02 | 10.0.0.12 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
-| sy-fqz03 | 10.0.0.13 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
-| sy-fqz04 | 10.0.0.14 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
-| sy-fqz05 | 10.0.0.15 | 32核 \* 2 | 64G \* 4 |     | 960G \* 4 + 1.92T \* 4 | RHEL-7.9 |
+| 主机名      | IP（暂定）    | CPU      | 内存       | 系统盘 | 数据盘                     | 操作系统     |
+| -------- | --------- | -------- | -------- | --- | ----------------------- | -------- |
+| sy-fqz01 | 10.0.0.11 | 32核 \* 2 | 64G \* 8 |     | 960G \* 4 + 1.92T \* 10 | RHEL-7.9 |
+| sy-fqz02 | 10.0.0.12 | 32核 \* 2 | 64G \* 8 |     | 960G \* 4 + 1.92T \* 10 | RHEL-7.9 |
+| sy-fqz03 | 10.0.0.13 | 32核 \* 2 | 64G \* 8 |     | 960G \* 4 + 1.92T \* 10 | RHEL-7.9 |
+| sy-fqz04 | 10.0.0.14 | 32核 \* 2 | 64G \* 8 |     | 960G \* 4 + 1.92T \* 10 | RHEL-7.9 |
+| sy-fqz05 | 10.0.0.15 | 32核 \* 2 | 64G \* 8 |     | 960G \* 4 + 1.92T \* 10 | RHEL-7.9 |
 
 ### 1.2 角色分布
 
@@ -107,7 +107,52 @@ done
 ssh root@sy-fqz05 'hostname'
 ```
 
-### 2.4 禁用 SELinux（全节点）
+### 2.4 创建 fqz 用户（全节点）
+
+所有节点创建统一的管理用户 `fqz`，并授予**免密 sudo**：
+
+```bash
+# 创建用户并设置密码
+useradd fqz
+echo '<fqz 的密码>' | passwd --stdin fqz
+```
+
+授予免密 sudo（用 `/etc/sudoers.d/` drop-in，避免直接改 `sudoers`）：
+
+```bash
+cat > /etc/sudoers.d/fqz <<'EOF'
+fqz   ALL=(ALL)       NOPASSWD:ALL
+EOF
+chmod 440 /etc/sudoers.d/fqz
+```
+
+验证（`-n` 表示不交互输入密码）：
+
+```bash
+su - fqz -c 'sudo -n whoami'     # 期望输出 root
+```
+
+> 用户名不要带中划线等特殊字符。若本集群统一用 root 管理，可跳过本节，但后续 SSH 与 CM 凭据需与所选用户保持一致（见 §2.5、§五）。
+
+### 2.5 fqz 用户 SSH 免密（sy-fqz01 → 全节点）
+
+需要的是 **从 sy-fqz01 到 sy-fqz01~05（含自身）** 的免密登录。在 sy-fqz01 上以 `fqz` 身份操作：
+
+```bash
+su - fqz
+ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa
+for h in sy-fqz01 sy-fqz02 sy-fqz03 sy-fqz04 sy-fqz05; do
+  ssh-copy-id fqz@$h          # 首次需输入 fqz 密码
+done
+
+# 验证：应无需密码、直接返回各主机名
+for h in sy-fqz01 sy-fqz02 sy-fqz03 sy-fqz04 sy-fqz05; do ssh fqz@$h hostname; done
+```
+
+> CM 若以 `fqz` 身份纳管集群，依赖的就是这套「免密 SSH + 免密 sudo」；此时 §五 的 SSH 凭据填 `fqz`。
+> 若沿用 root（§2.3），两套免密互不影响。
+
+### 2.6 禁用 SELinux（全节点）
 
 ```bash
 setenforce 0                 # 临时
@@ -115,13 +160,13 @@ sed -i 's/^SELINUX=.*/SELINUX=disabled/' /etc/selinux/config   # 永久
 getenforce                   # 期望输出 Disabled
 ```
 
-### 2.5 禁用防火墙（全节点）
+### 2.7 禁用防火墙（全节点）
 
 ```bash
 systemctl stop firewalld && systemctl disable firewalld
 ```
 
-### 2.6 关闭交换分区（全节点）
+### 2.8 关闭交换分区（全节点）
 
 ```bash
 swapoff -a
@@ -130,7 +175,7 @@ echo 'vm.swappiness = 1' >> /etc/sysctl.conf
 sysctl -p
 ```
 
-### 2.7 禁用透明大页面压缩（全节点）
+### 2.9 禁用透明大页面压缩（全节点）
 
 ```bash
 echo never > /sys/kernel/mm/transparent_hugepage/enabled
@@ -141,7 +186,7 @@ echo 'echo never > /sys/kernel/mm/transparent_hugepage/defrag'  >> /etc/rc.local
 chmod +x /etc/rc.local
 ```
 
-### 2.8 禁用 IPv6（全节点，可选）
+### 2.10 禁用 IPv6（全节点，可选）
 
 ```bash
 cat >> /etc/sysctl.conf <<'EOF'
@@ -152,13 +197,13 @@ EOF
 sysctl -p
 ```
 
-### 2.9 确认 Python 2.7（Hue 依赖）
+### 2.11 确认 Python 2.7（Hue 依赖）
 
 ```bash
 python -V      # 期望 Python 2.7.5（RHEL 7 自带）
 ```
 
-### 2.10 时间同步：服务状态与开机启动（**已配置，仅验证**）
+### 2.12 时间同步：服务状态与开机启动（**已配置，仅验证**）
 
 > NTP 已统一配置，本节只做验证，不重复配置。RHEL 7 可能用 `ntpd`，也可能用 `chronyd`，先确认实际在用哪个。
 
@@ -208,7 +253,8 @@ chronyc sources    # chronyd：行首带 ^* 表示当前同步源
 
 | 分类 | 文件 |
 | --- | --- |
-| CM | `cloudera-manager-server-6.3.1-1466458.el7.x86_64.rpm`、`cloudera-manager-daemons-...`、`cloudera-manager-agent-...`、`cloudera-manager-server-db-2-...`、`enterprise-debuginfo-...`、`oracle-j2sdk1.8-1.8.0+update181-1.x86_64.rpm`、`allkeys.asc` |
+| CM | `cloudera-manager-server-6.3.1-1466458.el7.x86_64.rpm`、`cloudera-manager-daemons-...`、`cloudera-manager-agent-...`、`cloudera-manager-server-db-2-...`、`enterprise-debuginfo-...`、`allkeys.asc` |
+| JDK | `jdk-8u181-linux-x64.tar.gz`（Oracle JDK 8u181，**手动解压安装，不用 RPM**） |
 | CDH Parcel | `CDH-6.3.2-1.cdh6.3.2.p0.1605554-el7.parcel`、`.parcel.sha1`、`.parcel.sha256`、`manifest.json` |
 | 扩展包 | `GPLEXTRAS-6.0.1-1.gplextras6.0.1.p0.590678-el7.parcel`（+ `.sha`） |
 | JDBC | `mysql-connector-java-5.1.49.jar` |
@@ -283,12 +329,38 @@ chown cloudera-scm:cloudera-scm ./*
 
 > 以下在 **sy-fqz01** 执行。
 
-### 4.1 安装 JDK
+### 4.1 安装 JDK（手动解压，**不用 RPM**，全节点）
+
+CDH 6.3 要求 Oracle JDK **1.8（8u181）**，且默认在 `/usr/java` 下查找。本文**不使用 RPM**，改为手动解压 tar 包——**在所有节点执行**（§四其余步骤仍在 sy-fqz01）。
 
 ```bash
-yum -y install oracle-j2sdk1.8.x86_64
-ls /usr/java/          # 期望 jdk1.8.0_181-cloudera
+# 1) 解压到 /usr/java（目录不存在则先建）
+mkdir -p /usr/java
+tar -zxf /path/to/jdk-8u181-linux-x64.tar.gz -C /usr/java/
+chown -R root:root /usr/java/jdk1.8.0_181
+
+# 2) 建立统一软链（CDH / Hadoop 依赖 /usr/java/jdk 这个路径）
+ln -sfn /usr/java/jdk1.8.0_181 /usr/java/jdk
+ls -l /usr/java/                 # 期望：jdk1.8.0_181 目录 + jdk -> jdk1.8.0_181 软链
+
+# 3) 版本自检
+/usr/java/jdk/bin/java -version  # 期望 1.8.0_181
 ```
+
+如需系统级 `JAVA_HOME`，添加 `/etc/profile.d/java.sh`：
+
+```bash
+cat > /etc/profile.d/java.sh <<'EOF'
+export JAVA_HOME=/usr/java/jdk
+export PATH=$JAVA_HOME/bin:$PATH
+EOF
+source /etc/profile.d/java.sh
+```
+
+> **注意**
+> - **所有节点路径必须完全一致**（均为 `/usr/java/jdk`），否则 CM 无法用同一套配置纳管各主机。
+> - 避免 CDH 不支持的版本：8u40 / 8u45 / 8u60 / 8u242；官方测试推荐 **8u181**（见 [[CDH集群JDK版本兼容性]]）。
+> - Oracle JDK 为闭源许可，请确认已获授权；亦可改用受支持的 OpenJDK 1.8。
 
 ### 4.2 安装并初始化 MySQL 5.7（离线）
 
@@ -391,8 +463,8 @@ INFO WebServerImpl:com.cloudera.server.cmf.WebServerImpl: Started Jetty server.
 2. **集群基本信息**：给集群命名，如 `sy-fqz-cluster`。
 3. **主机**：填写 `sy-fqz01, sy-fqz02, sy-fqz03, sy-fqz04, sy-fqz05`（或按 IP 段扫描）。
 4. **存储库**：使用**本地 Parcel 仓库**（默认即可，CM Server 自身分发 parcel）。
-5. **JDK 安装选项**：选「使用已有 JDK / 由 CM 安装」均可（源里已有 `oracle-j2sdk1.8`）。
-6. **SSH 凭据**：填 root 的**登录方式**（端口 22，用户名 root，密码或私钥）。
+5. **JDK 安装选项**：选「**使用集群上已安装的 JDK**」，路径填 `/usr/java/jdk`（本文手动解压安装，不用 RPM）。
+6. **SSH 凭据**：填集群管理用户的**登录方式**（端口 22；用户名与 §2.3/§2.4 所选一致，如 `root` 或 `fqz`，密码或私钥）。
 7. **安装 Agent**：等待各节点 `cloudera-scm-agent` 安装并启动。
 
 ```bash
