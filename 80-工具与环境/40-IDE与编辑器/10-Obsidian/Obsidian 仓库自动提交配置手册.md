@@ -19,17 +19,20 @@ tags:
 | --- | --- |
 | 机制 | Obsidian Git 插件（当前 `2.41.1`）的「自动 commit-and-sync」 |
 | 间隔 | 每 **10 分钟** |
-| 动作 | 拉取合并（pull）→ 本地提交（commit）→ 推送到 `origin`（push） |
+| 动作 | 本地提交（commit）→ 拉取合并（pull）→ 推送到 `origin`（push） |
 | 提交信息 | `vault backup: YYYY-MM-DD HH:mm:ss` |
 | 触发条件 | 仅当 **Obsidian 处于运行状态** 时生效 |
 
 流程：
 
 ```
-修改笔记 ──▶ [每 10 分钟] ──▶ git pull（合并远端）
-                              └▶ git commit
+修改笔记 ──▶ [每 10 分钟] ──▶ git commit
+                              └▶ git pull（合并远端，pullBeforePush=true）
                                   └▶ git push origin main
 ```
+
+> 顺序由 `syncMethod` 决定：本仓库为 `merge`，所以是 **commit → pull → push**；
+> 只有 `syncMethod = reset` 时才是先 pull 再 commit。
 
 ## 二、前置条件
 
@@ -37,7 +40,7 @@ tags:
 | --- | --- | --- |
 | 远程仓库 | `git@github.com:YangYunhe/obsidian.git` | `origin`，SSH 协议 |
 | SSH 免密 | 已配置 | 无需输入口令；验证：`git ls-remote --heads origin` |
-| git 身份 | `yangyunhe <yyh_5786@sina.com>` | 已设置于仓库本地配置 |
+| git 身份 | `yangyunhe <yyh_5786@sina.com>` | 设置于**全局**配置（`git config --global user.*`），仓库本地未单独覆盖 |
 | 插件 | obsidian-git `2.41.1` | 已在 `.obsidian/community-plugins.json` 中启用 |
 
 > 验证 SSH 是否可用：
@@ -54,6 +57,8 @@ tags:
 
 > 该文件**会入库**（见第四节），所以换机器克隆后插件设置可直接复用。
 > 代价是要自己保证其中不含 Token / 密码——入库前请按第四节的检查方法过一遍。
+
+下面是**关键字段节选**。插件首次保存会把全部默认项一并写回，实际文件有 40 多个键，不必手工补齐：
 
 ```json
 {
@@ -179,12 +184,19 @@ git status --short        # 下列内容会被提交
 
 `.gitignore` 只约束**之后**的提交，`git rm --cached` 也只把它们从当前索引里移除。已经写进历史的 blob 会一直留在 `.git` 里——旧提交仍然引用它，`git gc` 回收不了。本项目已执行过一次清理：
 
-| | 清理前 | 清理后 |
+| | 清理前 | 清理后（2026-10-15 实测） |
 | --- | --- | --- |
 | `.git` 体积 | 5.7 M | **264 K** |
 | 历史中的插件本体 | 6 个对象 / 8.3 MB（解压） | 无 |
 | 工作区的插件文件 | — | **一个没动**（6 个文件逐字节校验一致） |
 | 全新克隆下载量 | 4.1 M | **188 K** |
+
+> 上表是**清理当时**的实测值。`.git` 会随笔记与附件正常增长，与清理无关：2026-10-16 新增带截图的《使用阿里云服务器安装部署 Cloudera 6.3 服务》后，`.git` 已涨到约 13 M。
+> 判断清理是否仍然有效，看下面这条（应无输出），而不是看 `.git` 的绝对值：
+>
+> ```bash
+> git rev-list --objects --all | grep -E 'plugins/.*(main\.js|styles\.css)$'
+> ```
 
 本机没装 `git-filter-repo`，用 git 自带的 `filter-branch` 就够（提交少时完全没问题）：
 
@@ -271,7 +283,9 @@ git push origin main
 ```
 
 **Q3：换一台电脑怎么恢复？**
-插件配置（`data.json`）不入库，需在新机器上重新：安装并启用 obsidian-git → 按 3.1/3.2 配置。笔记与附件会自动同步过来。
+笔记、附件和插件配置（`data.json` / `manifest.json`）都在库里，克隆后即可拿到。
+但**插件本体不入库**，需要在 `设置 → 第三方插件` 里从社区重新安装并启用：`obsidian-git`（必需）、`obsidian-excalidraw-plugin`、`realclaudian`。
+启用后插件会读取库里的 `data.json`，自动提交配置随之生效，不必逐项重设。
 
 **Q4：想让插件的代码本体也同步？**
 删掉 `.gitignore` 里 `.obsidian/plugins/*/main.js` 与 `.obsidian/plugins/*/styles.css` 两行即可。
@@ -305,8 +319,8 @@ grep -oiE '"[^"]*(token|secret|password|api_?key|credential)[^"]*"' .obsidian/pl
 cd ~/文档/obsidian
 git checkout HEAD -- .gitignore
 
-# 3. （可选）删除插件配置
-rm .obsidian/plugins/obsidian-git/data.json
+# 3. （可选）删除插件配置。data.json 已被跟踪，用 git rm，否则删除动作会被自动提交
+git rm .obsidian/plugins/obsidian-git/data.json
 ```
 
 ## 相关

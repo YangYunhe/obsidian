@@ -21,7 +21,7 @@ tags:
 | `appearance.json` | 外观 | `nativeMenus: true`（未装主题，字体等均为默认） |
 | `core-plugins.json` | 核心插件开关 | 见下方全文 |
 | `community-plugins.json` | 社区插件清单 | `obsidian-excalidraw-plugin`、`realclaudian`、`obsidian-git` |
-| `graph.json` | 关系图谱 | 默认视图 |
+| `graph.json` | 关系图谱 | 未自定义过滤/着色；保存了视图折叠状态与布局参数 |
 | `templates.json` | 模板文件夹 | `91-模板` |
 | `plugins/*/data.json`、`plugins/*/manifest.json` | 插件设置 | 各插件自身设置（**不含插件本体**） |
 
@@ -33,7 +33,13 @@ tags:
   "promptDelete": false,
   "attachmentFolderPath": "./assets",
   "alwaysUpdateLinks": true,
-  "newLinkFormat": "relative"
+  "newLinkFormat": "relative",
+  "pdfExportSettings": {
+    "pageSize": "Letter",
+    "landscape": false,
+    "margin": "0",
+    "downscalePercent": 100
+  }
 }
 ```
 
