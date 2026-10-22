@@ -1,0 +1,12 @@
+sequenceDiagram
+    autonumber
+    participant Bob as 第三方应用
+    participant p_3 as 授权系统
+    participant p_5 as 认证系统
+    Bob->>p_3: 发起绑定用户信息请求
+    p_3->>p_5: 通过后台接口验证用户信息
+    p_5-->>p_3: 校验成功返回用户信息
+    p_3->>p_3: 绑定
+    p_3-->>Bob: 绑定成功
+    Bob->>p_3: 请求获取access_token
+    p_3-->>Bob: 返回access_token

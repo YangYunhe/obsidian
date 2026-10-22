@@ -1,0 +1,11 @@
+sequenceDiagram
+    autonumber
+    actor Alice as 用户
+    participant Bob as 第三方应用
+    participant p_3 as 授权系统
+    participant p_5 as 认证系统
+    Alice->>Bob: 输入用户名和密码
+    Bob->>p_3: 从后台系统发起授权请求
+    p_3->>p_5: 通过后台接口验证用户信息
+    p_5-->>p_3: 校验成功返回用户信息
+    p_3-->>Bob: 返回access_token信息

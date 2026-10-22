@@ -1,0 +1,11 @@
+sequenceDiagram
+    autonumber
+    actor Alice as 用户
+    participant Bob as 第三方应用
+    participant p_3 as 授权系统
+    participant p_5 as 认证系统
+    Alice->>Bob: 访问第三方应用
+    Bob->>p_3: 发起授权请求
+    p_3->>p_5: 重定向到认证系统，并发起用户认证
+    p_5-->>p_3: 登陆成功后回调
+    p_3-->>Bob: 重定向到第三方应用设置的回调地址

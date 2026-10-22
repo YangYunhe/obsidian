@@ -1,0 +1,15 @@
+sequenceDiagram
+    autonumber
+    actor Alice as 用户
+    participant Bob as 第三方应用
+    participant p_3 as 授权系统
+    participant p_4 as 认证系统
+    Alice->>Bob: 访问第三方应用
+    Bob->>p_3: 发起获取code的请求
+    p_3->>p_4: 重定向到认证系统发起用户认证
+    p_4-->>p_3: 登陆成功后回调
+    p_3-->>Bob: 重定向到第三方应用的回调地址
+    Bob->>p_3: 使用code换取access_token
+    p_3-->>Bob: 返回授权信息
+    Bob->>p_3: 使用refresh_token刷新token
+    p_3-->>Bob: 返回授权信息
