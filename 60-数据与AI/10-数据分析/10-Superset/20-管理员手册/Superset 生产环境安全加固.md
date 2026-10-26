@@ -145,7 +145,8 @@ Superset 可用 **Flask-Talisman** 设置安全响应头，但**必须显式启�
 
 > [!warning] 版本差异：文档内部对默认值的说法不一致
 > - 本篇（securing 指南）写：**4.0 及以后，Talisman 默认关闭**（`TALISMAN_ENABLED = False`），必须在 `superset_config.py` 里显式打开，`TALISMAN_CONFIG` 才生效。
-> - [[60-数据与AI/10-数据分析/10-Superset/20-管理员手册/Superset 安全配置|安全配置]] 篇按原文写的是"`TALISMAN_ENABLED` 默认 `True`"。
+> - [[60-数据与AI/10-数据分析/10-Superset/20-管理员手册/Superset 安全配置|安全配置]] 篇按原文写的是“`TALISMAN_ENABLED` 默认 `True`”。
+> - 查 6.1.0 的 `superset/config.py`：`TALISMAN_ENABLED = utils.cast_to_boolean(os.environ.get("TALISMAN_ENABLED", True))`，即 **默认 `True`**——securing 指南这句说法偏旧。
 >
 > **结论：不要依赖默认值。** 生产环境显式写 `TALISMAN_ENABLED = True` 并配好 `TALISMAN_CONFIG`，再用启动日志确认（生产模式下缺失 CSP 会告警）。
 
