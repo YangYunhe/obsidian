@@ -198,11 +198,11 @@ mysql://superset:Superset%4012345@<MySQL主机>:3306/sec_test?charset=utf8mb4
 
 ### 8. 测试角色
 
-| 角色 | 权限 | 用途 |
-| --- | --- | --- |
+| 角色            | 权限                                          | 用途              |
+| ------------- | ------------------------------------------- | --------------- |
 | `r_ds_orders` | 仅 `datasource access on ...sec_test_orders` | T06、T10–T13、RLS |
-| `r_nods` | **空**（无任何数据集权限） | T12 |
-| `r_db` | `database access on [sec_test]` | T17 |
+| `r_nods`      | **空**（无任何数据集权限）                             | T12             |
+| `r_db`        | `database access on [sec_test]`             | T17             |
 
 创建方式：**Settings → List Roles → +**，填名称，在 **Permissions** 下拉里搜索 `datasource` / `database` / `menu access` 来勾选。
 
