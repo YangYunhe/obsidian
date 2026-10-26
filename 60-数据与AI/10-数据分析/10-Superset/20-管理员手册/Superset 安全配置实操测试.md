@@ -56,57 +56,133 @@ curl -s -o /dev/null -w '%{http_code}\n' http://localhost:8088/health
 > 1. **改完没重启** —— 配置只在启动时读取；
 > 2. **权限没刷新** —— 角色/权限改动后，用**无痕窗口**重新登录，避免旧会话里的权限缓存干扰。
 
-### 3. 测试数据
+### 3. 测试库与测试数据（MySQL）
 
-在测试库里执行（PostgreSQL 语法；MySQL 请把 `serial` 换成 `auto_increment`、`numeric` 换成 `decimal`）：
+用 **root 或有建库权限的账号**执行。库名 `sec_test`，字符集必须 `utf8mb4`，否则中文会乱码。
 
 ```sql
+-- 1) 建测试库
+CREATE DATABASE IF NOT EXISTS sec_test
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_unicode_ci;
+
+USE sec_test;
+
+-- 2) 建测试表
 DROP TABLE IF EXISTS sec_test_orders;
 
 CREATE TABLE sec_test_orders (
-    id          serial PRIMARY KEY,
-    department  varchar(32)   NOT NULL,
-    region      varchar(16)   NOT NULL,
-    client_id   int           NOT NULL,
-    amount      numeric(10,2) NOT NULL,
-    created_at  date          NOT NULL,
-    owner       varchar(32)   NOT NULL
-);
+    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    department  VARCHAR(32)   NOT NULL COMMENT '部门',
+    region      VARCHAR(16)   NOT NULL COMMENT '大区',
+    client_id   INT           NOT NULL COMMENT '客户 ID',
+    amount      DECIMAL(10,2) NOT NULL COMMENT '金额',
+    created_at  DATE          NOT NULL COMMENT '下单日期',
+    owner       VARCHAR(32)   NOT NULL COMMENT '归属账号（与 Superset 用户名一致）',
+    PRIMARY KEY (id),
+    KEY idx_department (department),
+    KEY idx_region (region)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 3) 中文测试数据
 INSERT INTO sec_test_orders
     (department, region, client_id, amount, created_at, owner)
 VALUES
-    ('Finance',   'US',     4, 100.00, '2026-01-10', 'u_finance'),
-    ('Finance',   'Europe', 4, 200.00, '2026-02-11', 'u_finance'),
-    ('Marketing', 'Europe', 5, 300.00, '2026-03-12', 'u_marketing'),
-    ('Marketing', 'US',     5, 400.00, '2026-04-13', 'u_marketing'),
-    ('Ops',       'US',     6, 500.00, '2026-05-14', 'u_ops'),
-    ('Ops',       'Europe', 6, 600.00, '2026-06-15', 'u_ops');
+    ('财务部', '华北', 4, 100.00, '2026-01-10', 'u_finance'),
+    ('财务部', '华东', 4, 200.00, '2026-02-11', 'u_finance'),
+    ('市场部', '华东', 5, 300.00, '2026-03-12', 'u_marketing'),
+    ('市场部', '华北', 5, 400.00, '2026-04-13', 'u_marketing'),
+    ('运维部', '华北', 6, 500.00, '2026-05-14', 'u_ops'),
+    ('运维部', '华东', 6, 600.00, '2026-06-15', 'u_ops');
 ```
 
-**这 6 行数据是后面所有断言的基准：**
+> `owner` 列故意保留英文账号名：T30 的 Jinja 测试要拿它和 `current_username()` 比对，而 Superset 用户名就是 `u_finance` 这类。
+
+### 4. 给 Superset 的 MySQL 账号授权
+
+Superset 只需要**读**测试库。用 root 执行：
+
+```sql
+-- 4.1 账号不存在则创建（把密码换成你自己的）
+CREATE USER IF NOT EXISTS 'superset'@'%' IDENTIFIED BY 'Superset@12345';
+
+-- 4.2 只授予测试库的查询权限
+GRANT SELECT ON sec_test.* TO 'superset'@'%';
+
+-- 4.3 让授权立即生效
+FLUSH PRIVILEGES;
+
+-- 4.4 核对结果
+SHOW GRANTS FOR 'superset'@'%';
+```
+
+`SHOW GRANTS` 的预期输出里应能看到：
+
+```text
+GRANT USAGE ON *.* TO `superset`@`%`
+GRANT SELECT ON `sec_test`.* TO `superset`@`%`
+```
+
+**按需调整：**
+
+| 场景 | 改法 |
+| --- | --- |
+| 账号已存在，只想确认/改密码 | `ALTER USER 'superset'@'%' IDENTIFIED BY 'Superset@12345';` |
+| Superset 和 MySQL 在同一台机器 | 把 `'superset'@'%'` 换成 `'superset'@'localhost'`（更安全） |
+| 只允许固定网段 | `'superset'@'10.0.0.%'` |
+| 需要在 SQL Lab 里改数据 | 再加 `GRANT INSERT, UPDATE, DELETE ON sec_test.* TO 'superset'@'%';` |
+| 需要在 SQL Lab 里建临时表 | 再加 `GRANT CREATE, DROP, ALTER ON sec_test.* TO 'superset'@'%';` |
+
+> [!warning] MySQL 8 的认证插件
+> 如果 Superset 连接时报 `Authentication plugin 'caching_sha2_password' cannot be loaded`，改用原生插件：
+> ```sql
+> ALTER USER 'superset'@'%' IDENTIFIED WITH mysql_native_password BY 'Superset@12345';
+> FLUSH PRIVILEGES;
+> ```
+> MySQL 8.4 起该插件默认被禁用，需要以 `--mysql-native-password=ON` 启动，或升级驱动的加密支持。
+
+**用命令验证授权是否够用**：
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u superset -p'Superset@12345' sec_test \
+  -e "SELECT COUNT(*) AS 行数 FROM sec_test_orders;"
+```
+
+预期输出 `6`。若这里就报 `Access denied`，先修授权，别急着去 Superset 里试。
+
+### 5. 在 Superset 里添加连接与数据集
+
+1. **Settings → Database Connections → + Database**，SQLAlchemy URI 填：
+
+```text
+mysql://superset:Superset%4012345@<MySQL主机>:3306/sec_test?charset=utf8mb4
+```
+
+> 密码里的 `@` 等特殊字符必须做 URL 编码（`@` → `%40`），否则 URI 会被截断——这是最常见的连接失败原因。
+
+2. 点 **Test Connection** → 应显示成功；
+3. **Data → Datasets → + Dataset**，选该连接、schema 选 `sec_test`、表选 `sec_test_orders`；
+4. 保存后进 **Explore**，建一个最简单的 **Table** 图表，命名为 `probe_orders` 并保存；
+5. 之后所有 RLS 测试都复用 `probe_orders`，用 **View query** 看生成 SQL、用结果行数做断言。
+
+### 6. 断言基准
+
+**这 6 行数据是后面所有断言的依据：**
 
 | 过滤条件 | 期望行数 |
 | --- | --- |
 | 无条件 | 6 |
-| `department = 'Finance'` | 2 |
-| `region = 'US'` | 3 |
-| `department <> 'Ops'` | 4 |
-| 部门是 Finance 或 Marketing，**且** region 为 Europe | 2 |
+| `department = '财务部'` | 2 |
+| `region = '华北'` | 3 |
+| `department <> '运维部'` | 4 |
+| 部门是财务部或市场部，**且** region 为华东 | 2 |
 | `client_id = 4` | 2 |
 | `client_id = 5` | 2 |
 | `client_id = 4 AND client_id = 5` | 0 |
 | `client_id = 4 OR client_id = 5` | 4 |
 | `owner = 'u_finance'` | 2 |
 
-在 Superset 里把它注册为数据集：
-
-1. **Settings → Database Connections** 确认已有一个可用连接（没有就 **+ Database** 添加）；
-2. **Data → Datasets → + Dataset**，选该连接与 `public.sec_test_orders`；
-3. 保存后进 **Explore**，建一个最简单的 **Table** 图表，命名为 `probe_orders`，保存；
-4. 之后所有 RLS 测试都复用这个 `probe_orders`，用 **View query** 看生成 SQL、用结果行数做断言。
-
-### 4. 测试账号
+### 7. 测试账号
 
 统一密码：`Test@12345`（仅测试环境）。全部通过 **Settings → List Users → +** 创建，或按下面 API 批量建。
 
@@ -120,17 +196,17 @@ VALUES
 | `u_api` | Gamma | T25 |
 | `u_nods` | Gamma + `r_nods` | T12 |
 
-### 5. 测试角色
+### 8. 测试角色
 
 | 角色 | 权限 | 用途 |
 | --- | --- | --- |
 | `r_ds_orders` | 仅 `datasource access on ...sec_test_orders` | T06、T10–T13、RLS |
 | `r_nods` | **空**（无任何数据集权限） | T12 |
-| `r_db` | `database access on [测试库]` | T17 |
+| `r_db` | `database access on [sec_test]` | T17 |
 
 创建方式：**Settings → List Roles → +**，填名称，在 **Permissions** 下拉里搜索 `datasource` / `database` / `menu access` 来勾选。
 
-### 6. 调用 REST API
+### 9. 调用 REST API
 
 先拿 token（Superset 自身的 JWT，不是 API Key）：
 
@@ -153,7 +229,7 @@ curl -s -H "Authorization: Bearer $TOKEN" "$BASE/api/v1/security/roles/" | jq '.
 
 > 用 Bearer token 时**不需要 CSRF token**；用 cookie 会话调写接口才需要。这是排查 401/403 时首先要分清的事。
 
-### 7. 先知道：两处“文档与源码不一致”
+### 10. 先知道：两处“文档与源码不一致”
 
 跑测试前先记住这两条，否则会把**正常现象**记成 bug：
 
@@ -346,7 +422,7 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 
 1. `u_finance`（无 `sql_lab`）直接访问 `http://localhost:8088/sqllab/` → 应被拒；
 2. `u_sql`（Gamma + `sql_lab`，**未给库权限**）登录 → SQL Lab 能打开，但左侧 **Database** 下拉为空；
-3. 给 `u_sql` 加上 `r_db`（`database access on [测试库]`），重新登录；
+3. 给 `u_sql` 加上 `r_db`（`database access on [sec_test]`），重新登录；
 4. 在 SQL Lab 执行 `SELECT 1 AS ok;`。
 
 **预期**：1 拒绝；2 下拉为空；4 能查到结果。
@@ -526,7 +602,7 @@ FEATURE_FLAGS = {
 
 1. 给 `u_sql` 只加 `r_ds_orders`（单表权限），**不加** `r_db`；
 2. SQL Lab 里 `SELECT * FROM sec_test_orders LIMIT 5;` → 成功；`SELECT * FROM 别的表 LIMIT 5;` → 失败；
-3. 改为加 `r_db`（`database access on [测试库]`），重登；
+3. 改为加 `r_db`（`database access on [sec_test]`），重登；
 4. 再查“别的表” → 成功，且 Database 下拉里能看到该库。
 
 **预期**：2 只能查授权表；4 全库可查。
@@ -548,19 +624,21 @@ FEATURE_FLAGS = {
 
 ### T19 默认禁用清单生效
 
-**前置**：6.1.0 的 `DISALLOWED_SQL_FUNCTIONS` **自带一份非空默认清单**（postgresql 含 `version`、`pg_sleep`、`pg_read_file` 等），无需配置。
+**前置**：6.1.0 的 `DISALLOWED_SQL_FUNCTIONS` **自带一份非空默认清单**，其中 `mysql` 组含 `version`、`sleep`、`load_file`、`benchmark` 等，无需任何配置。
 
 **步骤**：在 SQL Lab 依次执行：
 
 ```sql
-SELECT 1;            -- A
-SELECT version();    -- B
-SELECT pg_sleep(1);  -- C
+SELECT 1;           -- A
+SELECT version();   -- B
+SELECT sleep(1);    -- C
 ```
 
 **预期**：A 成功；B、C 被拒绝，报错里出现“disallowed”（例如 `Disallowed function: version`）。
 
-**排查**：B 居然成功 → 你的连接引擎不是 postgresql（清单按**引擎名**分组，MySQL 的清单里是 `version`、`sleep` 等），或你覆盖了该配置却没合并默认值。
+**排查**：B 居然成功 → 检查连接的引擎名是否与清单的键一致（`mysql`），以及你是否覆盖了该配置却没带上默认项。
+
+> 用 PostgreSQL 的话把 C 换成 `SELECT pg_sleep(1);`；清单按**引擎名**分组，换库要换对应的组。
 
 ---
 
@@ -572,26 +650,27 @@ SELECT pg_sleep(1);  -- C
 
 ```python
 DISALLOWED_SQL_FUNCTIONS = {
-    "postgresql": {
-        # 去掉 version → 让它可用
-        "pg_sleep",
-        "pg_read_file",
+    "mysql": {
+        # 去掉了 version → 让它可用
+        "sleep",
+        "load_file",
+        "benchmark",
     },
 }
 ```
 
 2. 重启，执行 `SELECT version();` → **应成功**；
-3. 再改成禁用 `lower`：
+3. 再改成只禁用 `lower`：
 
 ```python
-DISALLOWED_SQL_FUNCTIONS = {"postgresql": {"lower"}}
+DISALLOWED_SQL_FUNCTIONS = {"mysql": {"lower"}}
 ```
 
 4. 重启，执行 `SELECT lower('ABC');` → **应被拒**。
 
 **预期**：2 成功、4 被拒。这证明清单是**由配置驱动、整体覆盖**的。
 
-> 注意：这里的 `{"postgresql": {...}}` 结构以 6.1.0 的 `config.py` 为准；如果你的版本是集合而非字典，按注释改。
+> 6.1.0 的类型是 `dict[str, set[str]]`（键为引擎名）。如果你的版本是别的结构，以 `superset/config.py` 里的注释为准。
 
 ---
 
@@ -719,7 +798,7 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 **步骤**：
 
 1. **Settings → Row Level Security → +**；
-2. 填：Name=`rls_finance`、Dataset=`sec_test_orders`、**Filter Type=`Regular`**、Clause=`department = 'Finance'`、Roles=`r_ds_orders`；
+2. 填：Name=`rls_finance`、Dataset=`sec_test_orders`、**Filter Type=`Regular`**、Clause=`department = '财务部'`、Roles=`r_ds_orders`；
 3. 保存；
 4. `u_finance` 重登，打开 `probe_orders`；
 5. admin 打开同一个图表。
@@ -753,19 +832,19 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 
 | Name | Clause | Filter Type | Group Key |
 | --- | --- | --- | --- |
-| f1 | `department = 'Finance'` | Regular | `department` |
-| f2 | `department = 'Marketing'` | Regular | `department` |
-| f3 | `region = 'Europe'` | Regular | `region` |
+| f1 | `department = '财务部'` | Regular | `department` |
+| f2 | `department = '市场部'` | Regular | `department` |
+| f3 | `region = '华东'` | Regular | `region` |
 
 > Group Key 字段在 RLS 表单里（部分版本折叠在高级项中）。
 
 2. `u_finance` 打开图表 → 点 **View query**。
 
-**预期**：**2 行**（Finance/Europe、Marketing/Europe），SQL 形如：
+**预期**：**2 行**（财务部/华东、市场部/华东），SQL 形如：
 
 ```sql
-WHERE (department = 'Finance' OR department = 'Marketing')
-  AND (region = 'Europe')
+WHERE (department = '财务部' OR department = '市场部')
+  AND (region = '华东')
 ```
 
 **排查**：行数 0 或 4 → Group Key 没填/填错，退化成 AND 或全 OR。
@@ -811,16 +890,16 @@ FEATURE_FLAGS = {
 
 **步骤**：
 
-1. 在物理数据集 `sec_test_orders` 上加 RLS：`region = 'US'`、Regular、角色 `r_ds_orders`；
-2. 建**虚拟数据集** `v_orders`：SQL 为 `SELECT * FROM sec_test_orders WHERE department <> 'Ops'`；
+1. 在物理数据集 `sec_test_orders` 上加 RLS：`region = '华北'`、Regular、角色 `r_ds_orders`；
+2. 建**虚拟数据集** `v_orders`：SQL 为 `SELECT * FROM sec_test_orders WHERE department <> '运维部'`；
 3. 用 `v_orders` 建图表 `probe_virtual`，`u_finance` 打开 → **View query**；
-4. 再在 `v_orders` 上**直接**加一条 RLS：`department = 'Finance'`、Regular、`r_ds_orders`；
+4. 再在 `v_orders` 上**直接**加一条 RLS：`department = '财务部'`、Regular、`r_ds_orders`；
 5. 重开图表看结果。
 
 **预期**：
 
-- 步骤 3：外层是虚拟 SQL，**内层**子查询里出现 `region = 'US'`；结果 **2 行**（Finance/US、Marketing/US）。
-- 步骤 5：**外层**再套 `department = 'Finance'`；结果 **1 行**（Finance/US）。
+- 步骤 3：外层是虚拟 SQL，**内层**子查询里出现 `region = '华北'`；结果 **2 行**（财务部/华北、市场部/华北）。
+- 步骤 5：**外层**再套 `department = '财务部'`；结果 **1 行**（财务部/华北）。
 
 **排查**：只有外层或只有内层 → 检查两条 RLS 分别挂在哪个数据集上（物理 vs 虚拟）。
 
