@@ -186,15 +186,15 @@ mysql://superset:Superset%4012345@<MySQL主机>:3306/sec_test?charset=utf8mb4
 
 统一密码：`Test@12345`（仅测试环境）。全部通过 **Settings → List Users → +** 创建，或按下面 API 批量建。
 
-| 账号 | 角色 | 用途 |
-| --- | --- | --- |
-| `u_alpha` | Alpha | T04 |
-| `u_gamma` | Gamma | T05、T06 |
-| `u_finance` | Gamma + `r_ds_orders` | T06、T26–T31、T36 |
-| `u_marketing` | Gamma + `r_ds_orders` | T30（Jinja）、T29 |
-| `u_sql` | Gamma + sql_lab（+ 后期加库权限） | T07、T08、T17 |
-| `u_api` | Gamma | T25 |
-| `u_nods` | Gamma + `r_nods` | T12 |
+| 账号            | 角色                        | 用途              |
+| ------------- | ------------------------- | --------------- |
+| `u_alpha`     | Alpha                     | T04             |
+| `u_gamma`     | Gamma                     | T05、T06         |
+| `u_finance`   | Gamma + `r_ds_orders`     | T06、T26–T31、T36 |
+| `u_marketing` | Gamma + `r_ds_orders`     | T30（Jinja）、T29  |
+| `u_sql`       | Gamma + sql_lab（+ 后期加库权限） | T07、T08、T17     |
+| `u_api`       | Gamma                     | T25             |
+| `u_nods`      | Gamma + `r_nods`          | T12             |
 
 ### 8. 测试角色
 
