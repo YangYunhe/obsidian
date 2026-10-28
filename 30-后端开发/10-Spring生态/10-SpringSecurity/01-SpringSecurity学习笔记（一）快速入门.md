@@ -394,7 +394,7 @@ spring-security.xml 放在 resources 目录下
 
 由于引入了 SpringSecurity，所有不能在未登录的情况下访问服务资源。所以会自动跳转到登录页面，这是一个 SpringSecurity 内置的登录页面：
 
-![image-20261028180635009](/home/yangyunhe/.config/Typora/typora-user-images/image-20261028180635009.png)
+![image](https://img2024.cnblogs.com/blog/3706506/202610/3706506-20261028185443766-2091039315.png)
 
 需要输入正确的用户和密码（即 zhangsan 和 123）才可以登录并访问到资源。
 
