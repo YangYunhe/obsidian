@@ -36,73 +36,131 @@ Spring Security 是一个框架，致力于为 Java 应用程序提供身份验�
 ```
 ### pom.xml
 ```xml
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">  
-  <modelVersion>4.0.0</modelVersion>  
-  
-  <groupId>com.arc</groupId>  
-  <artifactId>SpringSecurity</artifactId>  
-  <version>1.0-SNAPSHOT</version>  
-  
-  <repositories>    <repository>      <id>aliyunmaven</id>  
-      <name>阿里云公共仓库</name>  
-      <url>https://maven.aliyun.com/repository/public</url>  
-      <releases>        <enabled>true</enabled>  
-      </releases>      <snapshots>        <enabled>false</enabled>  
-      </snapshots>    </repository>  </repositories>  
-  <properties>    <jdk.version>1.8</jdk.version>  
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>  
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>  
-  </properties>  
-  <dependencies>    <dependency>      <groupId>org.springframework</groupId>  
-      <artifactId>spring-webmvc</artifactId>  
-      <version>5.3.39</version>  
-    </dependency>    <dependency>      <groupId>org.springframework.security</groupId>  
-      <artifactId>spring-security-config</artifactId>  
-      <version>5.8.16</version>  
-    </dependency>    <dependency>      <groupId>org.springframework.security</groupId>  
-      <artifactId>spring-security-taglibs</artifactId>  
-      <version>5.8.16</version>  
-    </dependency>    <dependency>      <groupId>javax.servlet</groupId>  
-      <artifactId>javax.servlet-api</artifactId>  
-      <version>4.0.1</version>  
-      <scope>provided</scope>  
-    </dependency>    <dependency>      <groupId>javax.servlet.jsp</groupId>  
-      <artifactId>javax.servlet.jsp-api</artifactId>  
-      <version>2.3.3</version>  
-      <scope>provided</scope>  
-    </dependency>    <dependency>      <groupId>org.slf4j</groupId>  
-      <artifactId>slf4j-log4j12</artifactId>  
-      <version>1.7.36</version>  
-    </dependency>    <dependency>      <groupId>junit</groupId>  
-      <artifactId>junit</artifactId>  
-      <version>4.13.2</version>  
-      <scope>test</scope>  
-    </dependency>  </dependencies>  
-  <build>    <resources>      <resource>        <directory>src/main/java</directory>  
-        <includes>          <include>**/*.xml</include>  
-          <include>**/*.properties</include>  
-        </includes>        <filtering>true</filtering>  
-      </resource>      <resource>        <directory>src/main/resources</directory>  
-        <filtering>true</filtering>  
-      </resource>    </resources>    <plugins>      <plugin>        <groupId>org.apache.maven.plugins</groupId>  
-        <artifactId>maven-compiler-plugin</artifactId>  
-        <version>3.13.0</version>  
-        <executions>          <execution>            <phase>compile</phase>  
-            <goals>              <goal>compile</goal>  
-            </goals>          </execution>        </executions>        <configuration>          <skip>true</skip>  
-          <source>${jdk.version}</source>  
-          <target>${jdk.version}</target>  
-          <encoding>${project.build.sourceEncoding}</encoding>  
-        </configuration>      </plugin>      <plugin>        <groupId>org.apache.maven.plugins</groupId>  
-        <artifactId>maven-resources-plugin</artifactId>  
-        <version>3.3.1</version>  
-        <configuration>          <encoding>${project.build.sourceEncoding}</encoding>  
-        </configuration>      </plugin>      <plugin>        <groupId>org.apache.tomcat.maven</groupId>  
-        <artifactId>tomcat7-maven-plugin</artifactId>  
-        <version>2.2</version>  
-        <configuration>          <port>8082</port>  
-          <path>/</path>  
-        </configuration>      </plugin>    </plugins>  </build>  
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.arc</groupId>
+  <artifactId>SpringSecurity</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <repositories>
+    <repository>
+      <id>aliyunmaven</id>
+      <name>阿里云公共仓库</name>
+      <url>https://maven.aliyun.com/repository/public</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <properties>
+    <jdk.version>1.8</jdk.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>5.3.39</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-config</artifactId>
+      <version>5.8.16</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-taglibs</artifactId>
+      <version>5.8.16</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>4.0.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet.jsp</groupId>
+      <artifactId>javax.servlet.jsp-api</artifactId>
+      <version>2.3.3</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.36</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/java</directory>
+        <includes>
+          <include>**/*.xml</include>
+          <include>**/*.properties</include>
+        </includes>
+        <filtering>true</filtering>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <skip>true</skip>
+          <source>${jdk.version}</source>
+          <target>${jdk.version}</target>
+          <encoding>${project.build.sourceEncoding}</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <encoding>${project.build.sourceEncoding}</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.tomcat.maven</groupId>
+        <artifactId>tomcat7-maven-plugin</artifactId>
+        <version>2.2</version>
+        <configuration>
+          <port>8082</port>
+          <path>/</path>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
 ```
+
+##
